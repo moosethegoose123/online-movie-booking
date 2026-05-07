@@ -1,10 +1,3 @@
--- ============================================================================
---  CƠ SỞ DỮ LIỆU: HỆ THỐNG ĐẶT VÉ XEM PHIM TRỰC TUYẾN
---  Database: cinema_booking
---  DBMS: MySQL 8.0+
---  Tác giả: Nhóm đồ án — 2026
--- ============================================================================
-
 DROP DATABASE IF EXISTS cinema_booking;
 CREATE DATABASE cinema_booking CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE cinema_booking;
@@ -19,7 +12,7 @@ CREATE TABLE roles (
     role_name      VARCHAR(30)  NOT NULL UNIQUE,        -- customer, staff, admin
     description    VARCHAR(200),
     created_at     DATETIME DEFAULT CURRENT_TIMESTAMP
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng hạng thành viên (membership tier)
 CREATE TABLE membership_tiers (
@@ -28,7 +21,7 @@ CREATE TABLE membership_tiers (
     min_points         INT NOT NULL DEFAULT 0,
     discount_percent   DECIMAL(5,2) NOT NULL DEFAULT 0, -- giảm giá mặc định cho thành viên
     benefits           TEXT
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng người dùng
 CREATE TABLE users (
@@ -51,7 +44,7 @@ CREATE TABLE users (
     FOREIGN KEY (tier_id) REFERENCES membership_tiers(tier_id),
     INDEX idx_user_email (email),
     INDEX idx_user_phone (phone)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 2. NHÓM BẢNG RẠP CHIẾU, PHÒNG CHIẾU, GHẾ
@@ -74,7 +67,7 @@ CREATE TABLE cinemas (
     is_active      BOOLEAN NOT NULL DEFAULT TRUE,
     created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
     INDEX idx_cinema_city (city)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng loại phòng chiếu (2D, 3D, IMAX, 4DX, Dolby...)
 CREATE TABLE room_types (
@@ -84,7 +77,7 @@ CREATE TABLE room_types (
     description       TEXT,
     price_multiplier  DECIMAL(4,2) NOT NULL DEFAULT 1.0,-- hệ số nhân giá (2D=1.0, IMAX=1.5)
     extra_fee         DECIMAL(10,2) NOT NULL DEFAULT 0  -- phụ thu cố định (nếu có)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng phòng chiếu
 CREATE TABLE rooms (
@@ -95,11 +88,15 @@ CREATE TABLE rooms (
     total_rows      INT NOT NULL,                       -- Số hàng ghế
     total_columns   INT NOT NULL,                       -- Số cột ghế
     total_seats     INT NOT NULL,                       -- Tổng số ghế thực tế
+    layout_json     LONGTEXT,                           -- v4: JSON mô tả layout chi tiết
+                                                        -- { rows, cols, cells: [[{type, label, price_tier, width_span?}, ...]] }
+                                                        -- type: STANDARD | VIP | COUPLE | SWEETBOX | DISABLED | AISLE | COLUMN | EMPTY
     is_active       BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at      DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     FOREIGN KEY (cinema_id)    REFERENCES cinemas(cinema_id),
     FOREIGN KEY (room_type_id) REFERENCES room_types(room_type_id),
     UNIQUE KEY uk_room_cinema (cinema_id, room_name)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng loại ghế (Thường, VIP, Couple, Sweetbox...)
 CREATE TABLE seat_types (
@@ -110,7 +107,7 @@ CREATE TABLE seat_types (
     capacity          TINYINT NOT NULL DEFAULT 1,       -- 1 với ghế đơn, 2 với ghế đôi
     price_multiplier  DECIMAL(4,2) NOT NULL DEFAULT 1.0,-- hệ số nhân giá
     color_code        VARCHAR(7)                          -- mã màu hiển thị trên sơ đồ (#FF5733)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng ghế (mỗi ghế thuộc 1 phòng, có loại ghế)
 CREATE TABLE seats (
@@ -125,7 +122,7 @@ CREATE TABLE seats (
     FOREIGN KEY (seat_type_id) REFERENCES seat_types(seat_type_id),
     UNIQUE KEY uk_seat_position (room_id, row_label, column_number),
     INDEX idx_seat_room (room_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 3. NHÓM BẢNG PHIM
@@ -155,13 +152,13 @@ CREATE TABLE movies (
     updated_at        DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
     INDEX idx_movie_status (status),
     INDEX idx_movie_release (release_date)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng thể loại phim
 CREATE TABLE genres (
     genre_id    INT PRIMARY KEY AUTO_INCREMENT,
     name        VARCHAR(50) NOT NULL UNIQUE             -- Hành động, Kinh dị, Tình cảm...
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng n-n: Phim — Thể loại
 CREATE TABLE movie_genres (
@@ -170,7 +167,7 @@ CREATE TABLE movie_genres (
     PRIMARY KEY (movie_id, genre_id),
     FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE,
     FOREIGN KEY (genre_id) REFERENCES genres(genre_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng diễn viên
 CREATE TABLE actors (
@@ -178,7 +175,7 @@ CREATE TABLE actors (
     name        VARCHAR(150) NOT NULL,
     avatar_url  VARCHAR(500),
     biography   TEXT
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng n-n: Phim — Diễn viên
 CREATE TABLE movie_actors (
@@ -189,7 +186,7 @@ CREATE TABLE movie_actors (
     PRIMARY KEY (movie_id, actor_id),
     FOREIGN KEY (movie_id) REFERENCES movies(movie_id) ON DELETE CASCADE,
     FOREIGN KEY (actor_id) REFERENCES actors(actor_id) ON DELETE CASCADE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 4. NHÓM BẢNG SUẤT CHIẾU & QUY TẮC GIÁ
@@ -212,7 +209,7 @@ CREATE TABLE showtimes (
     INDEX idx_showtime_movie (movie_id),
     INDEX idx_showtime_start (start_time),
     INDEX idx_showtime_room_time (room_id, start_time)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng ngày lễ (để tăng giá)
 CREATE TABLE holidays (
@@ -222,7 +219,7 @@ CREATE TABLE holidays (
     price_multiplier  DECIMAL(4,2) NOT NULL DEFAULT 1.5,
     description       VARCHAR(200),
     UNIQUE KEY uk_holiday_date (holiday_date)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng quy tắc giá theo ngày trong tuần & khung giờ
 CREATE TABLE price_rules (
@@ -238,7 +235,7 @@ CREATE TABLE price_rules (
     price_multiplier  DECIMAL(4,2) NOT NULL DEFAULT 1.0,
     priority          INT NOT NULL DEFAULT 0,           -- ưu tiên (lớn hơn áp dụng trước)
     is_active         BOOLEAN NOT NULL DEFAULT TRUE
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 5. NHÓM BẢNG KHUYẾN MÃI & COUPON
@@ -269,7 +266,7 @@ CREATE TABLE coupons (
     created_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (target_tier_id) REFERENCES membership_tiers(tier_id),
     INDEX idx_coupon_code (code)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng lịch sử sử dụng coupon
 CREATE TABLE coupon_usages (
@@ -283,7 +280,7 @@ CREATE TABLE coupon_usages (
     FOREIGN KEY (user_id)    REFERENCES users(user_id),
     INDEX idx_usage_user (user_id),
     INDEX idx_usage_coupon (coupon_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 6. NHÓM BẢNG ĐẶT VÉ & THANH TOÁN
@@ -298,7 +295,7 @@ CREATE TABLE payment_methods (
     fee_percent   DECIMAL(5,2) DEFAULT 0,               -- phí phụ thu (nếu có)
     is_active     BOOLEAN NOT NULL DEFAULT TRUE,
     display_order INT DEFAULT 0
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng đơn đặt vé
 CREATE TABLE bookings (
@@ -312,14 +309,15 @@ CREATE TABLE bookings (
     service_fee       DECIMAL(10,2) NOT NULL DEFAULT 0, -- phí dịch vụ
     final_amount      DECIMAL(10,2) NOT NULL,           -- số tiền phải trả
     points_earned     INT NOT NULL DEFAULT 0,           -- điểm tích lũy thưởng
-    status            ENUM('pending','awaiting_payment','paid','cancelled','refunded','used','expired')
+    status            ENUM('pending','awaiting_payment','paid','used','expired','refunded_by_cinema')
                       NOT NULL DEFAULT 'pending',
     qr_code           VARCHAR(500),                     -- đường dẫn/chuỗi QR
     note              TEXT,
     created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
     expired_at        DATETIME,                         -- hết hạn giữ chỗ (thường 10-15 phút)
     paid_at           DATETIME,
-    cancelled_at      DATETIME,
+    refunded_at       DATETIME,                         -- thời điểm hoàn tiền (CHỈ khi rạp hủy)
+    refund_reason     TEXT,                             -- lý do hoàn (vì rạp hủy suất)
     FOREIGN KEY (user_id)     REFERENCES users(user_id),
     FOREIGN KEY (showtime_id) REFERENCES showtimes(showtime_id),
     FOREIGN KEY (coupon_id)   REFERENCES coupons(coupon_id),
@@ -327,7 +325,7 @@ CREATE TABLE bookings (
     INDEX idx_booking_showtime (showtime_id),
     INDEX idx_booking_status (status),
     INDEX idx_booking_created (created_at)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng ghế được đặt trong đơn
 CREATE TABLE booking_seats (
@@ -339,7 +337,28 @@ CREATE TABLE booking_seats (
     FOREIGN KEY (seat_id)    REFERENCES seats(seat_id),
     UNIQUE KEY uk_booking_seat (booking_id, seat_id),
     INDEX idx_bs_seat (seat_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- v4: Bảng giữ ghế tạm (thay thế Redis hold)
+-- Mỗi record = 1 ghế đang được user "giữ" tạm (8 phút mặc định)
+-- UNIQUE constraint chống double-hold cùng ghế của cùng suất
+-- expires_at được dùng làm "TTL" tự nhiên qua MySQL
+CREATE TABLE seat_holds (
+    hold_id           BIGINT PRIMARY KEY AUTO_INCREMENT,
+    showtime_id       INT NOT NULL,
+    seat_id           INT NOT NULL,
+    user_id           INT NOT NULL,
+    session_id        VARCHAR(64),                       -- nhóm các ghế cùng phiên giữ
+    held_at           DATETIME DEFAULT CURRENT_TIMESTAMP,
+    expires_at        DATETIME NOT NULL,                 -- thường = held_at + 8 phút
+    FOREIGN KEY (showtime_id) REFERENCES showtimes(showtime_id),
+    FOREIGN KEY (seat_id)     REFERENCES seats(seat_id),
+    FOREIGN KEY (user_id)     REFERENCES users(user_id),
+    UNIQUE KEY uk_hold_show_seat (showtime_id, seat_id),  -- chống double-hold
+    INDEX idx_holds_session (session_id),
+    INDEX idx_holds_expires (expires_at),
+    INDEX idx_holds_user (user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng thanh toán
 CREATE TABLE payments (
@@ -348,19 +367,19 @@ CREATE TABLE payments (
     method_id          INT NOT NULL,
     amount             DECIMAL(10,2) NOT NULL,
     transaction_id     VARCHAR(100),                    -- mã giao dịch từ cổng thanh toán
-    status             ENUM('pending','processing','success','failed','refunded','cancelled')
+    status             ENUM('pending','processing','success','failed','refunded')
                        NOT NULL DEFAULT 'pending',
     gateway_response   TEXT,                            -- raw response từ cổng (JSON)
     initiated_at       DATETIME DEFAULT CURRENT_TIMESTAMP,
     completed_at       DATETIME,
-    refunded_at        DATETIME,
-    refund_amount      DECIMAL(10,2) DEFAULT 0,
+    refunded_at        DATETIME,                        -- chỉ set khi rạp hủy suất chiếu
+    refund_amount      DECIMAL(10,2) DEFAULT 0,         -- = final_amount khi rạp hủy
     FOREIGN KEY (booking_id) REFERENCES bookings(booking_id),
     FOREIGN KEY (method_id)  REFERENCES payment_methods(method_id),
     INDEX idx_payment_booking (booking_id),
     INDEX idx_payment_status (status),
     INDEX idx_payment_transaction (transaction_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 7. NHÓM BẢNG ĐÁNH GIÁ & THÔNG BÁO
@@ -381,7 +400,7 @@ CREATE TABLE reviews (
     FOREIGN KEY (booking_id) REFERENCES bookings(booking_id),
     UNIQUE KEY uk_user_movie_review (user_id, movie_id),
     INDEX idx_review_movie (movie_id)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Bảng thông báo cho người dùng
 CREATE TABLE notifications (
@@ -395,7 +414,61 @@ CREATE TABLE notifications (
     created_at        DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     INDEX idx_noti_user (user_id, is_read)
-) ENGINE=InnoDB;
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- ============================================================================
+-- 7B. CONTENT TABLES (banners, promotions, news cho trang chủ)
+-- ============================================================================
+
+-- Banner hero ở trang chủ
+CREATE TABLE banners (
+    banner_id      INT PRIMARY KEY AUTO_INCREMENT,
+    title          VARCHAR(200) NOT NULL,
+    subtitle       VARCHAR(300),
+    image_url      VARCHAR(500) NOT NULL,     -- ảnh lớn hiển thị hero
+    link_url       VARCHAR(500),              -- link khi click (tới phim/promotion)
+    link_type      ENUM('movie','promotion','external','none') DEFAULT 'none',
+    link_ref_id    INT,                       -- ID của movie/promotion nếu link nội bộ
+    display_order  INT DEFAULT 0,
+    is_active      BOOLEAN DEFAULT TRUE,
+    start_date     DATE,
+    end_date       DATE,
+    created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_banner_active (is_active, display_order)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Chương trình khuyến mãi (dùng cho các block Ưu đãi/Sự kiện)
+CREATE TABLE promotions (
+    promotion_id   INT PRIMARY KEY AUTO_INCREMENT,
+    title          VARCHAR(200) NOT NULL,      -- VD: THỨ 3 VUI VẺ - 50K/VÉ
+    short_desc     VARCHAR(300),               -- mô tả ngắn hiển thị trên card
+    full_content   TEXT,                       -- chi tiết khi click xem
+    image_url      VARCHAR(500) NOT NULL,
+    category       ENUM('event','member','combo','payment','movie') DEFAULT 'event',
+    coupon_code    VARCHAR(50),                -- link tới coupon nếu có (HAPPYDAY, U22...)
+    valid_from     DATETIME,
+    valid_to       DATETIME,
+    display_order  INT DEFAULT 0,
+    is_active      BOOLEAN DEFAULT TRUE,
+    created_at     DATETIME DEFAULT CURRENT_TIMESTAMP,
+    INDEX idx_promo_category (category, is_active)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Tin tức / giới thiệu
+CREATE TABLE news (
+    news_id      INT PRIMARY KEY AUTO_INCREMENT,
+    title        VARCHAR(300) NOT NULL,
+    slug         VARCHAR(300) UNIQUE,
+    summary      VARCHAR(500),                -- tóm tắt hiển thị trên danh sách
+    content      TEXT,                        -- nội dung đầy đủ HTML/Markdown
+    thumbnail    VARCHAR(500),
+    author       VARCHAR(100) DEFAULT 'Admin',
+    category     VARCHAR(50),                 -- Giới thiệu phim, Sự kiện, Review...
+    view_count   INT DEFAULT 0,
+    published_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    is_published BOOLEAN DEFAULT TRUE,
+    INDEX idx_news_published (is_published, published_at DESC)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- ============================================================================
 -- 8. DỮ LIỆU MẪU (SEED DATA)
@@ -571,5 +644,69 @@ END //
 DELIMITER ;
 
 -- ============================================================================
--- HẾT SCRIPT
+-- 9. DỮ LIỆU MẪU CHO BANNERS / PROMOTIONS / NEWS
 -- ============================================================================
+
+INSERT INTO banners (title, subtitle, image_url, link_type, display_order) VALUES
+('DORAEMON: NOBITA VÀ VÙNG ĐẤT LÝ TƯỞNG TRÊN BẦU TRỜI',
+ 'Phim hoạt hình Nhật Bản - Đang chiếu rạp',
+ 'https://cdn.galaxycine.vn/media/2023/5/4/doraemon-2023-2_1683170878301.jpg',
+ 'movie', 1),
+('FAST & FURIOUS X',
+ 'Bom tấn hành động mùa hè 2026',
+ 'https://cdn.galaxycine.vn/media/2023/5/4/fast-x_1683170878301.jpg',
+ 'movie', 2),
+('NGƯỜI NHỆN: DU HÀNH VŨ TRỤ NHỆN',
+ 'Trở lại với phiên bản 3D IMAX',
+ 'https://cdn.galaxycine.vn/media/2023/6/2/spider-man-across-the-spider-verse_1685699867534.jpg',
+ 'movie', 3);
+
+INSERT INTO promotions (title, short_desc, image_url, category, coupon_code, valid_from, valid_to, display_order) VALUES
+('THỨ 3 VUI VẺ - 50K/VÉ',
+ 'Giảm giá siêu hấp dẫn mỗi thứ 3 hàng tuần, chỉ 50.000đ/vé cho mọi suất chiếu',
+ 'https://cdn.galaxycine.vn/media/2022/11/2/thu-3-vui-ve_1667360614089.jpg',
+ 'event', 'HAPPYDAY', '2026-01-01', '2026-12-31', 1),
+('NGÀY TRI ÂN - GIẢM 45K/VÉ',
+ 'Tri ân khách hàng thân thiết, vé chỉ từ 45.000đ cho tất cả suất chiếu',
+ 'https://cdn.galaxycine.vn/media/2023/1/3/member-day_1672724394168.jpg',
+ 'event', NULL, '2026-01-01', '2026-12-31', 2),
+('THANH TOÁN ZALOPAY - ƯU ĐÃI DOUBLE',
+ 'Giảm 9K cho đơn từ 69K khi thanh toán qua ZaloPay',
+ 'https://cdn.galaxycine.vn/media/2023/3/1/zalopay_1677640793486.jpg',
+ 'payment', NULL, '2026-01-01', '2026-12-31', 3),
+('U22 - VÉ SIÊU RẺ',
+ 'Giảm 20% cho khách hàng dưới 22 tuổi, áp dụng mọi suất chiếu',
+ 'https://cdn.galaxycine.vn/media/2023/4/28/u22_1682648748394.jpg',
+ 'member', 'U22', '2026-01-01', '2026-12-31', 4),
+('MEMBER 45K VÉ 2D',
+ 'Thành viên được mua vé 2D chỉ 45.000đ từ thứ 2 đến thứ 5',
+ 'https://cdn.galaxycine.vn/media/2022/12/7/member-price_1670393447334.jpg',
+ 'member', 'MEMBER_GOLD', '2026-01-01', '2026-12-31', 5),
+('COMBO BẮP NƯỚC GIẢM 10K',
+ 'Mua combo bắp + nước giảm ngay 10.000đ khi đặt vé online',
+ 'https://cdn.galaxycine.vn/media/2023/2/14/combo_1676355674983.jpg',
+ 'combo', 'COMBO_100K', '2026-01-01', '2026-12-31', 6);
+
+INSERT INTO news (title, slug, summary, content, thumbnail, category) VALUES
+('Kiều Minh Tuấn, Mạc Văn Khoa, Quốc Trường tham gia phim "Kẻ Ăn Đánh"',
+ 'ke-an-danh-phim-moi',
+ 'Ba nam diễn viên nổi tiếng cùng tham gia bộ phim hành động - hài mới của đạo diễn Võ Thanh Hòa.',
+ 'Đạo diễn Võ Thanh Hòa vừa công bố dự án phim mới "Kẻ Ăn Đánh" với sự tham gia của dàn diễn viên đình đám Kiều Minh Tuấn, Mạc Văn Khoa và Quốc Trường. Phim hứa hẹn mang đến những tình huống hành động hài hước, mãn nhãn cho khán giả...',
+ 'https://cdn.galaxycine.vn/media/2023/5/15/ke-an-danh_1684129867534.jpg',
+ 'Giới thiệu phim'),
+('Bom tấn Marvel mới "The Marvels" tung trailer đầu tiên',
+ 'the-marvels-trailer',
+ 'Siêu anh hùng Captain Marvel, Ms. Marvel và Monica Rambeau hợp lực trong phần phim mới nhất.',
+ 'Marvel Studios vừa tung trailer đầu tiên của "The Marvels", đánh dấu sự trở lại của Captain Marvel sau 4 năm vắng bóng...',
+ 'https://cdn.galaxycine.vn/media/2023/4/11/the-marvels_1681200067534.jpg',
+ 'Giới thiệu phim'),
+('Avatar 3 dự kiến công chiếu cuối năm 2026',
+ 'avatar-3-release-date',
+ 'James Cameron xác nhận phần 3 của thương hiệu Avatar sẽ ra mắt vào tháng 12/2026.',
+ 'Trong một cuộc phỏng vấn gần đây, đạo diễn James Cameron đã xác nhận phần 3 của Avatar sẽ chính thức công chiếu vào tháng 12 năm 2026...',
+ 'https://cdn.galaxycine.vn/media/2023/1/20/avatar-3_1674180067534.jpg',
+ 'Sự kiện');
+
+
+-- Cập nhật banner URL cho movies (ảnh ngang to)
+UPDATE movies SET banner_url = poster_url WHERE banner_url IS NULL;
